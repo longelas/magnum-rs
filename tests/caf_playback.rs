@@ -169,3 +169,30 @@ fn rodio_source_playback_caf() {
     assert_eq!(samples.len(), 480);
     assert!(samples.iter().all(|&s| s >= -1.0 && s <= 1.0));
 }
+
+#[cfg(feature = "with_rodio_21")]
+#[test]
+fn rodio21_source_trait_caf() {
+    use rodio21::source::Source;
+    let source = match open_example_opus_caf() {
+        Some(s) => s,
+        None => return,
+    };
+    assert_eq!(source.channels(), source.metadata.channel_count as u16);
+    assert_eq!(source.sample_rate(), 48_000);
+    assert!(source.current_span_len().is_some(), "CAF should report span length");
+    assert!(source.current_span_len().unwrap() >= 1);
+    assert!(source.total_duration().is_none());
+}
+
+#[cfg(feature = "with_rodio_21")]
+#[test]
+fn rodio21_source_playback_caf() {
+    let mut source = match open_example_opus_caf() {
+        Some(s) => s,
+        None => return,
+    };
+    let samples: Vec<f32> = source.by_ref().take(480).collect();
+    assert_eq!(samples.len(), 480);
+    assert!(samples.iter().all(|&s| s >= -1.0 && s <= 1.0));
+}

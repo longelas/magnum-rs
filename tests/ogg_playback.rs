@@ -161,3 +161,29 @@ fn rodio_source_playback_ogg() {
     assert_eq!(samples.len(), 480);
     assert!(samples.iter().all(|&s| s >= -1.0 && s <= 1.0));
 }
+
+#[cfg(feature = "with_rodio_21")]
+#[test]
+fn rodio21_source_trait_ogg() {
+    use rodio21::source::Source;
+    let source = match open_example_opus_ogg() {
+        Some(s) => s,
+        None => return,
+    };
+    assert_eq!(source.channels(), source.metadata.channel_count as u16);
+    assert_eq!(source.sample_rate(), 48_000);
+    assert_eq!(source.current_span_len(), Some(240));
+    assert!(source.total_duration().is_none());
+}
+
+#[cfg(feature = "with_rodio_21")]
+#[test]
+fn rodio21_source_playback_ogg() {
+    let mut source = match open_example_opus_ogg() {
+        Some(s) => s,
+        None => return,
+    };
+    let samples: Vec<f32> = source.by_ref().take(480).collect();
+    assert_eq!(samples.len(), 480);
+    assert!(samples.iter().all(|&s| s >= -1.0 && s <= 1.0));
+}

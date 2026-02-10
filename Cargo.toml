@@ -16,16 +16,18 @@ categories = ["multimedia::encoding", "multimedia::audio"]
 [features]
 with_caf = ["caf"]
 with_ogg = ["ogg"]
-with_rodio = ["rodio"]
+with_rodio = ["dep:rodio"]
+with_rodio_21 = ["dep:rodio21"]
 with_kira = ["kira"]
 default = ["with_caf", "with_ogg"]
-all = ["with_caf", "with_ogg", "with_rodio", "with_kira"]
+all = ["with_caf", "with_ogg", "with_rodio", "with_rodio_21", "with_kira"]
 
 [dependencies]
 kira = { version = "0.5.3", optional = true }
 caf = { version = "0.1.0", optional = true }
 ogg = { version = "0.8.0", optional = true }
 rodio = { version = "0.14.0", optional = true }
+rodio21 = { package = "rodio", version = "0.21", optional = true }
 audiopus = "0.2.0"
 thiserror = "1.0.24"
 byteorder = "1.4.3"
@@ -33,3 +35,4 @@ bitreader = "0.3.3"
 
 [dev-dependencies]
 rodio = "0.14.0"
+rodio21 = { package = "rodio", version = "0.21" }

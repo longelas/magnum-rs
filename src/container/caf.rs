@@ -144,6 +144,31 @@ where
     }
 }
 
+#[cfg(feature = "with_rodio_21")]
+use rodio21::source::Source as Source21;
+
+#[cfg(feature = "with_rodio_21")]
+impl<T> Source21 for OpusSourceCaf<T>
+where
+    T: Read + Seek,
+{
+    fn current_span_len(&self) -> Option<usize> {
+        Some(self.packet.audio_desc.frames_per_packet as usize)
+    }
+
+    fn channels(&self) -> rodio21::ChannelCount {
+        self.metadata.channel_count as rodio21::ChannelCount
+    }
+
+    fn sample_rate(&self) -> rodio21::SampleRate {
+        self.metadata.sample_rate
+    }
+
+    fn total_duration(&self) -> Option<std::time::Duration> {
+        None
+    }
+}
+
 #[cfg(feature = "with_kira")]
 use kira::audio_stream::AudioStream;
 
