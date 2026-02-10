@@ -187,3 +187,18 @@ fn rodio21_source_playback_ogg() {
     assert_eq!(samples.len(), 480);
     assert!(samples.iter().all(|&s| s >= -1.0 && s <= 1.0));
 }
+
+#[cfg(feature = "with_kira")]
+#[test]
+fn kira_audio_stream_ogg() {
+    use kira::audio_stream::AudioStream;
+    let mut source = match open_example_opus_ogg() {
+        Some(s) => s,
+        None => return,
+    };
+    for _ in 0..240 {
+        let frame = AudioStream::next(&mut source, 1.0 / 48_000.0);
+        assert!(frame.left >= -1.0 && frame.left <= 1.0);
+        assert!(frame.right >= -1.0 && frame.right <= 1.0);
+    }
+}

@@ -34,5 +34,6 @@ byteorder = "1.4.3"
 bitreader = "0.3.3"
 
 [dev-dependencies]
+kira = "0.5.3"
 rodio = "0.14.0"
 rodio21 = { package = "rodio", version = "0.21" }
