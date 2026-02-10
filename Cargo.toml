@@ -30,3 +30,6 @@ audiopus = "0.2.0"
 thiserror = "1.0.24"
 byteorder = "1.4.3"
 bitreader = "0.3.3"
+
+[dev-dependencies]
+rodio = "0.14.0"

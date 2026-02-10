@@ -59,9 +59,9 @@ where
     /// Return Some(packet), or None if at end of stream.
     fn get_next_packet(&mut self) -> Option<ogg::Packet> {
         while let Ok(packet) = self.packet.read_packet_expected() {
-            // Ignore invalid but harmless 0-byte packets that some 
+            // Ignore invalid but harmless 0-byte packets that some
             // encoders sometimes generate at the end of a stream.
-            if packet.data.len() > 0 {
+            if !packet.data.is_empty() {
                 return Some(packet);
             }
         }
@@ -139,7 +139,7 @@ where
 
     fn next(&mut self) -> Option<Self::Item> {
         // If we're out of data (or haven't started) then load a chunk of data into our buffer
-        if self.buffer.len() == 0 {
+        if self.buffer.is_empty() {
             if let Some(chunk) = self.get_next_chunk() {
                 //println!("Loading chunk");
                 self.buffer = chunk;
@@ -148,18 +148,17 @@ where
             }
         }
         // Assuming there's data now we can read it using our counter
-        if self.buffer.len() > 0 {
+        if !self.buffer.is_empty() {
             self.buffer_pos += 1;
             if self.buffer_pos > self.buffer.len() {
                 //println!("End of data chunk");
                 self.buffer.clear();
                 return self.next();
-            } else {
-                //println!("Found data {}", self.count);
-                return Some(self.buffer[self.buffer_pos - 1]);
             }
+            //println!("Found data {}", self.buffer_pos);
+            return Some(self.buffer[self.buffer_pos - 1]);
         }
-        return None;
+        None
     }
 }
 
@@ -180,7 +179,7 @@ where
     }
 
     fn sample_rate(&self) -> u32 {
-        48_000 as u32
+        48_000_u32
     }
 
     fn total_duration(&self) -> Option<std::time::Duration> {
@@ -196,11 +195,11 @@ impl<T> AudioStream for OpusSourceOgg<T>
 where
     T: 'static + Read + Seek + Send + Debug,
 {
-    fn next(&mut self, dt: f64) -> kira::Frame {
+    fn next(&mut self, _dt: f64) -> kira::Frame {
         match self.metadata.channel_count {
             1 => {
                 let l = Iterator::next(self);
-                let sl = if let Some(n) = l { n } else { 0.0 };
+                let sl = l.unwrap_or(0.0);
                 kira::Frame {
                     left: sl,
                     right: sl,
@@ -209,8 +208,8 @@ where
             2 => {
                 let l = Iterator::next(self);
                 let r = Iterator::next(self);
-                let sl = if let Some(n) = l { n } else { 0.0 };
-                let sr = if let Some(n) = r { n } else { 0.0 };
+                let sl = l.unwrap_or(0.0);
+                let sr = r.unwrap_or(0.0);
                 kira::Frame {
                     left: sl,
                     right: sr,

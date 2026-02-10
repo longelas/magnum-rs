@@ -30,8 +30,7 @@ where
     T: Read + Seek,
 {
     pub fn new(file: T) -> Result<Self, OpusSourceError> {
-        let cr =
-            CafChunkReader::new(file).or_else(|_| Err(OpusSourceError::InvalidContainerFormat))?;
+        let cr = CafChunkReader::new(file).map_err(|_| OpusSourceError::InvalidContainerFormat)?;
         let packet =
             CafPacketReader::from_chunk_reader(cr, vec![caf::ChunkType::AudioData]).unwrap();
 
@@ -72,22 +71,17 @@ where
     }
 
     fn get_next_chunk(&mut self) -> Option<Vec<f32>> {
-        if let Ok(pkt) = self.packet.next_packet() {
-            if let Some(pkt) = pkt {
-                let mut output_buf: Vec<f32> = vec![
-                    0.0;
-                    (self.packet.audio_desc.frames_per_packet * self.metadata.channel_count as u32)
-                        as usize
-                ];
-                //println!("CAF pkt {:X?} ({})", pkt, pkt.len());
-                self.decoder
-                    .decode_float(Some(&pkt), &mut output_buf, false)
-                    .unwrap();
-
-                Some(output_buf)
-            } else {
-                None
-            }
+        if let Ok(Some(pkt)) = self.packet.next_packet() {
+            let mut output_buf: Vec<f32> = vec![
+                0.0;
+                (self.packet.audio_desc.frames_per_packet * self.metadata.channel_count as u32)
+                    as usize
+            ];
+            //println!("CAF pkt {:X?} ({})", pkt, pkt.len());
+            self.decoder
+                .decode_float(Some(&pkt), &mut output_buf, false)
+                .unwrap();
+            Some(output_buf)
         } else {
             None
         }
@@ -102,7 +96,7 @@ where
 
     fn next(&mut self) -> Option<Self::Item> {
         // If we're out of data (or haven't started) then load a chunk of data into our buffer
-        if self.buffer.len() == 0 {
+        if self.buffer.is_empty() {
             if let Some(chunk) = self.get_next_chunk() {
                 //println!("Loading chunk");
                 self.buffer = chunk;
@@ -111,18 +105,17 @@ where
             }
         }
         // Assuming there's data now we can read it using our counter
-        if self.buffer.len() > 0 {
+        if !self.buffer.is_empty() {
             self.buffer_pos += 1;
             if self.buffer_pos > self.buffer.len() {
                 //println!("End of data chunk");
                 self.buffer.clear();
                 return self.next();
-            } else {
-                //println!("Found data {}", self.count);
-                return Some(self.buffer[self.buffer_pos - 1]);
             }
+            //println!("Found data {}", self.buffer_pos);
+            return Some(self.buffer[self.buffer_pos - 1]);
         }
-        return None;
+        None
     }
 }
 
@@ -159,11 +152,11 @@ impl<T> AudioStream for OpusSourceCaf<T>
 where
     T: 'static + Read + Seek + Send + Debug,
 {
-    fn next(&mut self, dt: f64) -> kira::Frame {
+    fn next(&mut self, _dt: f64) -> kira::Frame {
         match self.metadata.channel_count {
             1 => {
                 let l = Iterator::next(self);
-                let sl = if let Some(n) = l { n } else { 0.0 };
+                let sl = l.unwrap_or(0.0);
                 kira::Frame {
                     left: sl,
                     right: sl,
@@ -172,8 +165,8 @@ where
             2 => {
                 let l = Iterator::next(self);
                 let r = Iterator::next(self);
-                let sl = if let Some(n) = l { n } else { 0.0 };
-                let sr = if let Some(n) = r { n } else { 0.0 };
+                let sl = l.unwrap_or(0.0);
+                let sr = r.unwrap_or(0.0);
                 kira::Frame {
                     left: sl,
                     right: sr,
